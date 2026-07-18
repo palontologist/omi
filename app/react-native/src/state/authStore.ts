@@ -1,39 +1,52 @@
 import { create } from 'zustand';
-import { observeAuth, signOut } from '@/auth/firebaseAuth';
-import { setDevApiKey } from '@/api/omiApi';
+import { observeAuth, signOut, signInWithGoogle, signInWithApple } from '@/auth/firebaseAuth';
 
 interface AuthState {
   uid: string | null;
   token: string | null;
   loading: boolean;
-  devApiKey: string | null;
+  error: string | null;
   init: () => () => void;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
-  setDevKey: (key: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   uid: null,
   token: null,
   loading: true,
-  devApiKey: null,
+  error: null,
   init: () => {
-    let unsub: (() => void) | null = null;
-    observeAuth((uid, token) => {
+    const unsub = observeAuth((uid, token) => {
       set({ uid, token, loading: false });
-    }).then((fn) => {
-      unsub = fn;
     });
     return () => {
-      unsub?.();
+      unsub();
     };
+  },
+  loginWithGoogle: async () => {
+    set({ loading: true, error: null });
+    try {
+      await signInWithGoogle();
+    } catch (e: any) {
+      set({ error: e?.message ?? 'Google sign-in failed' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  loginWithApple: async () => {
+    set({ loading: true, error: null });
+    try {
+      await signInWithApple();
+    } catch (e: any) {
+      set({ error: e?.message ?? 'Apple sign-in failed' });
+    } finally {
+      set({ loading: false });
+    }
   },
   logout: async () => {
     await signOut();
     set({ uid: null, token: null });
-  },
-  setDevKey: (key) => {
-    setDevApiKey(key);
-    set({ devApiKey: key });
   },
 }));

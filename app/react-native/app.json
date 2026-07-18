@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "scheme": "omi",
     "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.omi.app"
@@ -14,13 +15,31 @@
       "package": "com.omi.app",
       "adaptiveIcon": {
         "backgroundColor": "#000000"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       [
         "expo-router",
         {
           "origin": "https://omi.me"
+        }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": true,
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "kotlinVersion": "2.1.20"
+          },
+          "ios": {
+            "newArchEnabled": true
+          }
         }
       ]
     ],
@@ -30,6 +49,7 @@
       "agentProxyWsUrl": "wss://api.omi.me/v1/agent/chat",
       "deepgramApiKey": "",
       "deepgramWsUrl": "wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&smart_format=true&interim_results=true",
+      "webClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
       "router": {
         "origin": "https://omi.me"
       },
@@ -37,6 +57,9 @@
         "projectId": "89802c67-892a-43a9-a069-05691427d75b"
       }
     },
-    "owner": "palontologist"
+    "owner": "palontologist",
+    "assetBundlePatterns": [
+      "assets/images/*"
+    ]
   }
 }

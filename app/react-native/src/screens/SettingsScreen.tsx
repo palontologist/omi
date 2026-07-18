@@ -3,11 +3,10 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/state/authStore';
 
 export default function SettingsScreen() {
-  const { uid, logout, devApiKey } = useAuthStore();
+  const { uid, logout } = useAuthStore();
   return (
     <View style={styles.container}>
       <Text style={styles.row}>Account: {uid ?? 'signed out'}</Text>
-      <Text style={styles.row}>Dev API key: {devApiKey ?? 'off'}</Text>
       <Button title="Sign out" onPress={() => logout()} />
     </View>
   );

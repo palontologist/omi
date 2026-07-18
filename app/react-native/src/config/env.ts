@@ -15,6 +15,7 @@ export const ENV = {
   deepgramWsUrl:
     extra.deepgramWsUrl ??
     'wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&smart_format=true&interim_results=true',
+  webClientId: extra.webClientId ?? '',
 } as const;
 
 export type Env = typeof ENV;
