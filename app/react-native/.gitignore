@@ -6,4 +6,3 @@ ios/
 *.log
 .DS_Store
 .env
-google-services.json
