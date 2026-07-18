@@ -1,58 +1,29 @@
 import { setAuthToken } from '@/api/omiApi';
 
 /**
- * Firebase auth wrapper (Android-first). Mirrors lib/services/auth_service.dart:
- * the Firebase ID token is used as the Omi API bearer token.
+ * Auth wrapper (Firebase pending).
  *
- * Firebase is loaded lazily so the app still builds/runs in environments without
- * the native @react-native-firebase modules installed (e.g. a test APK built
- * before google-services.json is provided). When absent, auth stays signed-out.
+ * Firebase native modules are intentionally NOT imported here so the app builds
+ * and runs without a google-services.json. When Firebase is wired up later
+ * (add @react-native-firebase/app + /auth, the config plugins in app.json, and
+ * google-services.json), replace the stubs below with the real implementation
+ * (Firebase ID token forwarded as the Omi bearer token).
  */
-type FirebaseAuthModule = typeof import('@react-native-firebase/auth').default;
-
-let authMod: FirebaseAuthModule | null = null;
-let loadPromise: Promise<FirebaseAuthModule | null> | null = null;
-
-async function loadAuth(): Promise<FirebaseAuthModule | null> {
-  if (authMod) return authMod;
-  if (loadPromise) return loadPromise;
-  loadPromise = import('@react-native-firebase/auth')
-    .then((m) => {
-      authMod = m.default;
-      return authMod;
-    })
-    .catch(() => null);
-  return loadPromise;
-}
-
 export async function signInWithGoogle(): Promise<void> {
-  throw new Error('signInWithGoogle: wire @react-native-google-signin for Android');
+  throw new Error('signInWithGoogle: Firebase not configured in this build');
 }
 
 export async function observeAuth(onChange: (uid: string | null, token: string | null) => void) {
-  const auth = await loadAuth();
-  if (!auth) {
-    onChange(null, null);
-    return () => {};
-  }
-  return auth().onAuthStateChanged(async (user) => {
-    if (user) {
-      const token = await user.getIdToken();
-      setAuthToken(token);
-      onChange(user.uid, token);
-    } else {
-      setAuthToken(null);
-      onChange(null, null);
-    }
-  });
+  onChange(null, null);
+  return () => {};
 }
 
 export async function signOut() {
-  const auth = await loadAuth();
-  if (auth) await auth().signOut();
+  /* no-op */
 }
 
 export async function currentUid(): Promise<string | null> {
-  const auth = await loadAuth();
-  return auth?.().currentUser?.uid ?? null;
+  return null;
 }
+
+void setAuthToken;
