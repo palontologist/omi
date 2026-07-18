@@ -48,7 +48,7 @@
       "agentProxyWsUrl": "wss://api.omi.me/v1/agent/chat",
       "deepgramApiKey": "",
       "deepgramWsUrl": "wss://api.deepgram.com/v1/listen?model=nova-2&diarize=true&smart_format=true&interim_results=true",
-      "webClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+      "webClientId": "",
       "router": {
         "origin": "https://omi.me"
       },

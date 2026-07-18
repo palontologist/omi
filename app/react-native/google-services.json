@@ -1,31 +1,36 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "omi-app-placeholder",
-    "storage_bucket": "omi-app-placeholder.appspot.com"
+    "project_number": "183101876530",
+    "project_id": "omi-app-55fc6",
+    "storage_bucket": "omi-app-55fc6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:183101876530:android:9b24e8252d82a446bb8f2b",
         "android_client_info": {
           "package_name": "com.omi.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "000000000000-placeholder.apps.googleusercontent.com",
+          "client_id": "183101876530-ej12taqji9s8aodejptfvl69fkvtk8lg.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD-PLACEHOLDER-REPLACE-WITH-REAL-KEY"
+          "current_key": "AIzaSyA0aAHvDJekttd6-AaX2X1HizZCmgWCt1g"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "183101876530-ej12taqji9s8aodejptfvl69fkvtk8lg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

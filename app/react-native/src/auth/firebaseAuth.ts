@@ -12,10 +12,14 @@ import { ENV } from '@/config/env';
  * for com.omi.app. Until those are provided, sign-in throws a clear error.
  */
 
-GoogleSignin.configure({
-  webClientId: ENV.webClientId,
-  offlineAccess: false,
-});
+// On Android the google-sign_in plugin reads the correct OAuth client ID from
+// google-services.json automatically. webClientId is only needed for iOS/Web,
+// so we pass it when a real value is configured (avoids a placeholder warning).
+if (ENV.webClientId && !ENV.webClientId.includes('YOUR_')) {
+  GoogleSignin.configure({ webClientId: ENV.webClientId, offlineAccess: false });
+} else {
+  GoogleSignin.configure({ offlineAccess: false });
+}
 
 function randomNonce(length = 32): string {
   const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~';
