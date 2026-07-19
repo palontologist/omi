@@ -12,9 +12,10 @@ import { setAuthToken } from '@/api/omiApi';
  */
 
 // On Android the google-sign_in plugin reads the correct OAuth client ID from
-// google-services.json automatically. Requesting offlineAccess:true makes the
-// plugin return an idToken (required for the Firebase credential).
-GoogleSignin.configure({ offlineAccess: true });
+// google-services.json automatically. Do NOT set offlineAccess:true without a
+// webClientId, or the plugin throws "offline use requires server web ClientID"
+// at startup and crashes the app. The default sign-in still returns an idToken.
+GoogleSignin.configure({});
 
 function randomNonce(length = 32): string {
   const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~';
