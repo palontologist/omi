@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.25.0",
-    "@expo/dom-webview": "56.0.6",
     "@expo/log-box": "56.0.14",
     "@expo/vector-icons": "^15.0.0",
     "@invertase/react-native-apple-authentication": "^2.4.1",
