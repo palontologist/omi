@@ -1,5 +1,3 @@
-patchedDependencies:
-  expo-modules-core: patches/expo-modules-core+57.0.6.patch
 minimumReleaseAge: 0
 overrides:
   postcss: 8.5.17
