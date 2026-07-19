@@ -7,8 +7,9 @@ import {
   ActivityIndicator,
   Linking,
   StyleSheet,
+  StatusBar,
+  Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome } from '@expo/vector-icons';
 import { useAuthStore } from '@/state/authStore';
 
@@ -16,15 +17,14 @@ const BG = require('../../assets/images/onboarding-bg.webp');
 
 export default function OnboardingScreen() {
   const { loading, error, loginWithGoogle, loginWithApple } = useAuthStore();
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.flex}>
       <ImageBackground source={BG} style={styles.flex} resizeMode="cover">
-        <SafeAreaView style={styles.flex} edges={['top']}>
+        <View style={[styles.flex, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0 }]}>
           <View style={styles.spacer} />
 
-          <View style={[styles.card, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.card, { paddingBottom: 16 }]}>
             {loading && (
               <ActivityIndicator
                 style={{ marginBottom: 16 }}
@@ -73,7 +73,7 @@ export default function OnboardingScreen() {
               .
             </Text>
           </View>
-        </SafeAreaView>
+        </View>
       </ImageBackground>
     </View>
   );

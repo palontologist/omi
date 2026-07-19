@@ -1,6 +1,5 @@
 import React, { useEffect, Component, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text, View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/state/authStore';
 
@@ -40,18 +39,16 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {uid ? (
-            <>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="conversation/[id]" />
-            </>
-          ) : (
-            <Stack.Screen name="onboarding" />
-          )}
-        </Stack>
-      </SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {uid ? (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="conversation/[id]" />
+          </>
+        ) : (
+          <Stack.Screen name="onboarding" />
+        )}
+      </Stack>
     </ErrorBoundary>
   );
 }
