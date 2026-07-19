@@ -6,3 +6,7 @@ ios/
 *.log
 .DS_Store
 .env
+
+# local signing credentials (do not commit)
+credentials.json
+android/keystores/

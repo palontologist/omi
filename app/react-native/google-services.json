@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "183101876530-cl1020tigpkverkof9ak5j1p0d0kpm7h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.omi.app",
+            "certificate_hash": "7f062e7b219e30189c2cfef20171d200157a40a4"
+          }
+        },
+        {
           "client_id": "183101876530-ej12taqji9s8aodejptfvl69fkvtk8lg.apps.googleusercontent.com",
           "client_type": 3
         }

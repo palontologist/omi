@@ -1,6 +1,7 @@
 import React, { useEffect, Component, type ReactNode } from 'react';
 import { Stack } from 'expo-router';
 import { Text, View, StyleSheet } from 'react-native';
+import '../global.css';
 import { useAuthStore } from '@/state/authStore';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {

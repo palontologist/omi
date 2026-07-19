@@ -17,17 +17,21 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
     "types": [
       "expo",
       "react",
-      "react-native"
+      "react-native",
+      "nativewind/types"
     ]
   },
   "include": [
     "src",
-    "app"
+    "app",
+    "nativewind-env.d.ts"
   ],
   "exclude": [
     "node_modules",
