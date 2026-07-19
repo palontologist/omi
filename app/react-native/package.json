@@ -50,6 +50,9 @@
     }
   },
   "pnpm": {
-    "minimumReleaseAge": 0
+    "minimumReleaseAge": 0,
+    "overrides": {
+      "postcss": "8.5.17"
+    }
   }
 }
