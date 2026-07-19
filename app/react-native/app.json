@@ -55,10 +55,10 @@
         "origin": "https://omi.me"
       },
       "eas": {
-        "projectId": "e3ad27a8-eb7a-4e36-85ab-02acbf154117"
+        "projectId": "644b0f50-a968-4d70-bbf7-904cd4d59ec7"
       }
     },
-    "owner": "givenchys-team",
+    "owner": "frontforumfocus",
     "assetBundlePatterns": [
       "assets/images/*"
     ],
