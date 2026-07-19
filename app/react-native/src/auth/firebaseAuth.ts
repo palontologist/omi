@@ -2,6 +2,7 @@ import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { setAuthToken } from '@/api/omiApi';
+import { ENV } from '@/config/env';
 
 /**
  * Firebase-backed auth (mirrors the Flutter app's flow):
@@ -11,11 +12,14 @@ import { setAuthToken } from '@/api/omiApi';
  * for com.omi.app. Until those are provided, sign-in throws a clear error.
  */
 
-// On Android the google-sign_in plugin reads the correct OAuth client ID from
-// google-services.json automatically. Do NOT set offlineAccess:true without a
-// webClientId, or the plugin throws "offline use requires server web ClientID"
-// at startup and crashes the app. The default sign-in still returns an idToken.
-GoogleSignin.configure({});
+// For Firebase, the Google sign-in must return an idToken. That requires
+// offlineAccess:true AND a webClientId (the web OAuth client from
+// google-services.json). Without the webClientId the plugin throws
+// "offline use requires server web ClientID" at startup and crashes.
+GoogleSignin.configure({
+  webClientId: ENV.webClientId,
+  offlineAccess: true,
+});
 
 function randomNonce(length = 32): string {
   const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~';
@@ -104,7 +108,17 @@ export async function signInWithGoogle(): Promise<string> {
     throw new Error('Google sign-in was cancelled');
   }
   const user = (result as any).data ?? result;
-  const idToken: string | undefined = user?.idToken ?? (result as any).idToken;
+  let idToken: string | undefined = user?.idToken ?? (result as any).idToken;
+  // Fallback: getTokens() explicitly returns { idToken, accessToken } when
+  // offlineAccess is enabled. Defensive against shape differences across versions.
+  if (!idToken) {
+    try {
+      const tokens = await GoogleSignin.getTokens();
+      idToken = tokens?.idToken;
+    } catch {
+      /* ignore, handled below */
+    }
+  }
   if (!idToken) {
     throw new Error(
       'Google sign-in failed: no idToken. Got keys: ' +
