@@ -2,7 +2,6 @@ import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { setAuthToken } from '@/api/omiApi';
-import { ENV } from '@/config/env';
 
 /**
  * Firebase-backed auth (mirrors the Flutter app's flow):
@@ -13,13 +12,9 @@ import { ENV } from '@/config/env';
  */
 
 // On Android the google-sign_in plugin reads the correct OAuth client ID from
-// google-services.json automatically. webClientId is only needed for iOS/Web,
-// so we pass it when a real value is configured (avoids a placeholder warning).
-if (ENV.webClientId && !ENV.webClientId.includes('YOUR_')) {
-  GoogleSignin.configure({ webClientId: ENV.webClientId, offlineAccess: false });
-} else {
-  GoogleSignin.configure({ offlineAccess: false });
-}
+// google-services.json automatically. Requesting offlineAccess:true makes the
+// plugin return an idToken (required for the Firebase credential).
+GoogleSignin.configure({ offlineAccess: true });
 
 function randomNonce(length = 32): string {
   const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~';
@@ -102,9 +97,19 @@ function sha256(input: string): string {
 
 export async function signInWithGoogle(): Promise<string> {
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  const userInfo = await GoogleSignin.signIn();
-  const idToken = (userInfo as any)?.idToken ?? (userInfo as any)?.data?.idToken;
-  if (!idToken) throw new Error('Google sign-in failed: no idToken');
+  const result = await GoogleSignin.signIn();
+  // @react-native-google-signin v13 returns { type: 'success', data: User }
+  if (!result || (result as any).type === 'cancel') {
+    throw new Error('Google sign-in was cancelled');
+  }
+  const user = (result as any).data ?? result;
+  const idToken: string | undefined = user?.idToken ?? (result as any).idToken;
+  if (!idToken) {
+    throw new Error(
+      'Google sign-in failed: no idToken. Got keys: ' +
+        JSON.stringify(Object.keys(user ?? result ?? {})),
+    );
+  }
   const googleCredential = auth.GoogleAuthProvider.credential(idToken);
   const userCred = await auth().signInWithCredential(googleCredential);
   const token = await userCred.user.getIdToken();
