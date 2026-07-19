@@ -126,7 +126,13 @@ export async function signInWithGoogle(): Promise<string> {
     );
   }
   const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-  const userCred = await auth().signInWithCredential(googleCredential);
+  let userCred;
+  try {
+    userCred = await auth().signInWithCredential(googleCredential);
+  } catch (e: any) {
+    console.error('[auth] Firebase signInWithCredential failed:', e?.code, e?.message, JSON.stringify(e));
+    throw e;
+  }
   const token = await userCred.user.getIdToken();
   setAuthToken(token);
   return token;

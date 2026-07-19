@@ -30,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await signInWithGoogle();
     } catch (e: any) {
+      console.error('[auth] Google sign-in error:', e);
       set({ error: e?.message ?? 'Google sign-in failed' });
     } finally {
       set({ loading: false });
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await signInWithApple();
     } catch (e: any) {
+      console.error('[auth] Apple sign-in error:', e);
       set({ error: e?.message ?? 'Apple sign-in failed' });
     } finally {
       set({ loading: false });
