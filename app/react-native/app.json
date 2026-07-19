@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Omi",
-    "slug": "givenchy",
+    "slug": "frontforumfocus",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "omi",
@@ -58,7 +58,7 @@
         "projectId": "644b0f50-a968-4d70-bbf7-904cd4d59ec7"
       }
     },
-    "owner": "frontforumfocus",
+    "owner": "frontforumfocuss-team",
     "assetBundlePatterns": [
       "assets/images/*"
     ],
