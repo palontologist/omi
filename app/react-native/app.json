@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Omi",
-    "slug": "omi",
+    "slug": "givenchy",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "omi",
@@ -30,14 +30,14 @@
         "expo-build-properties",
         {
           "android": {
-            "newArchEnabled": true,
+            "newArchEnabled": false,
             "minSdkVersion": 24,
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
             "kotlinVersion": "2.1.20"
           },
           "ios": {
-            "newArchEnabled": true
+            "newArchEnabled": false
           }
         }
       ]
@@ -53,10 +53,10 @@
         "origin": "https://omi.me"
       },
       "eas": {
-        "projectId": "89802c67-892a-43a9-a069-05691427d75b"
+        "projectId": "e3ad27a8-eb7a-4e36-85ab-02acbf154117"
       }
     },
-    "owner": "palontologist",
+    "owner": "givenchys-team",
     "assetBundlePatterns": [
       "assets/images/*"
     ]
