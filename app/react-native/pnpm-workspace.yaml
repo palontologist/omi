@@ -1,2 +1,2 @@
 patchedDependencies:
-  expo-modules-core: patches/expo-modules-core.patch
+  expo-modules-core: patches/expo-modules-core+57.0.6.patch
