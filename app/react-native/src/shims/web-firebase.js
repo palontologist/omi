@@ -1,20 +1,34 @@
 const onAuthStateChanged = (cb) => {
-  // No persistence on web shim; report signed-out immediately.
-  cb(null);
+  // Web shim has no persistence: report signed-out immediately.
+  try {
+    cb(null);
+  } catch (e) {
+    // ignore
+  }
   return () => {};
 };
-const app = () => ({
-  options: {},
-  name: 'web-shim',
-});
-const auth = () => ({
+
+const authInstance = {
   onAuthStateChanged,
-  signInWithCredential: async () => ({ user: { uid: 'web', getIdToken: async () => 'web-token' } }),
+  signInWithCredential: async () => ({
+    user: { uid: 'web', getIdToken: async () => 'web-token' },
+  }),
   signOut: async () => {},
   currentUser: null,
-});
-export const firebase = { app, auth };
+};
+
+function auth() {
+  return authInstance;
+}
+
+const appInstance = { options: {}, name: 'web-shim' };
+function app() {
+  return appInstance;
+}
+
+const firebase = { app, auth };
 export const initializeApp = app;
 export const getAuth = auth;
 export const getApp = app;
+export const FirebaseAuthTypes = {};
 export default firebase;
