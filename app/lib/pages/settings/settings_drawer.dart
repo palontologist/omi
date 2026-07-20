@@ -15,6 +15,7 @@ import 'package:omi/pages/memories/page.dart';
 import 'package:omi/pages/settings/integrations_page.dart';
 import 'package:omi/pages/settings/usage_page.dart';
 import 'package:omi/pages/referral/referral_page.dart';
+import 'package:omi/providers/ai_interjection_provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/models/subscription.dart';
@@ -576,6 +577,21 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                   },
                 ),
                 const Divider(height: 1, color: Color(0xFF3C3C43)),
+                Consumer<AiInterjectionProvider>(
+                  builder: (context, aiProvider, child) {
+                    return _buildSettingsItem(
+                      title: 'AI Interjection',
+                      icon: const FaIcon(FontAwesomeIcons.brain, color: Color(0xFF8E8E93), size: 20),
+                      trailingChip: Switch(
+                        value: aiProvider.enabled,
+                        onChanged: (value) => aiProvider.setEnabled(value),
+                        activeColor: Colors.deepPurpleAccent,
+                      ),
+                      onTap: () => aiProvider.setEnabled(!aiProvider.enabled),
+                    );
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFF3C3C43)),
                 _buildSettingsItem(
                   title: context.l10n.integrations,
                   icon: FaIcon(FontAwesomeIcons.networkWired, color: Color(0xFF8E8E93), size: 20),
@@ -591,6 +607,85 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                   onTap: () {
                     PlatformManager.instance.analytics.permissionsSettingsOpened();
                     routeToPage(context, const PermissionsPage());
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFF3C3C43)),
+                _buildSettingsItem(
+                  title: context.l10n.memories,
+                  icon: const FaIcon(FontAwesomeIcons.brain, color: Color(0xFF8E8E93), size: 20),
+                  onTap: () {
+                    routeToPage(context, const MemoriesPage());
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFF3C3C43)),
+                Consumer<AiInterjectionProvider>(
+                  builder: (context, provider, child) {
+                    return GestureDetector(
+                      onTap: () => provider.setEnabled(!provider.enabled),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1C1C1E),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: FaIcon(
+                                  FontAwesomeIcons.solidComment,
+                                  color: provider.enabled ? const Color(0xFF8E8E93) : const Color(0xFF5C5C62),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'AI Interjection',
+                                      style: TextStyle(
+                                        color: provider.enabled ? Colors.white : const Color(0xFF8E8E93),
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        'NEW',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: provider.enabled,
+                                onChanged: (v) => provider.setEnabled(v),
+                                activeThumbColor: Colors.white,
+                                activeTrackColor: const Color(0xFF34C759),
+                                inactiveThumbColor: const Color(0xFF8E8E93),
+                                inactiveTrackColor: const Color(0xFF3C3C43),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
                   },
                 ),
               ],

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "183101876530",
+    "project_id": "omi-app-55fc6",
+    "storage_bucket": "omi-app-55fc6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:183101876530:android:9b24e8252d82a446bb8f2b",
+        "android_client_info": {
+          "package_name": "com.omi.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "183101876530-cl1020tigpkverkof9ak5j1p0d0kpm7h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.omi.app",
+            "certificate_hash": "7f062e7b219e30189c2cfef20171d200157a40a4"
+          }
+        },
+        {
+          "client_id": "183101876530-ej12taqji9s8aodejptfvl69fkvtk8lg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0aAHvDJekttd6-AaX2X1HizZCmgWCt1g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "183101876530-ej12taqji9s8aodejptfvl69fkvtk8lg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
