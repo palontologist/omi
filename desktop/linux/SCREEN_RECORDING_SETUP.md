@@ -48,7 +48,7 @@ systemctl --user restart xdg-desktop-portal
 
 ### 4. Verify Screen Capture Works
 
-1. Launch the app: `appimage-run dist/omi-windows-1.0.0.AppImage`
+1. Launch the app: `appimage-run dist/omi-linux-1.0.0.AppImage`
 2. Go to Settings → Enable "Rewind" (background screen capture)
 3. Check the console for `[rewind]` log messages indicating frames are being captured
 
@@ -94,10 +94,10 @@ tesseract --version
 **Fix:**
 ```bash
 # Try disabling GPU acceleration
-appimage-run dist/omi-windows-1.0.0.AppImage --disable-gpu
+appimage-run dist/omi-linux-1.0.0.AppImage --disable-gpu
 
 # Or set the ozone platform hint
-appimage-run dist/omi-windows-1.0.0.AppImage --ozone-platform-hint=auto
+appimage-run dist/omi-linux-1.0.0.AppImage --ozone-platform-hint=auto
 ```
 
 ### App crashes on screen capture start

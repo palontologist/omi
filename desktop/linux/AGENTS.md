@@ -1,24 +1,46 @@
-# Omi Development Notes
+# Omi Desktop — Linux Port
 
-## Known Issues and Solutions
+This subtree (`desktop/linux`) is the **Linux** Electron build of the Omi desktop app.
+It shares the same renderer and main-process feature set as the Windows build
+(`desktop/windows`) but uses Linux-native capture/automation backends.
 
-### Sign Language Avatar Not Rendering (Linux/Wayland)
+## What is supported on Linux
 
-**Issue:**
-The skeletal avatar (pose-viewer) would not render on the Sign Language and Sign Test pages.
+- **Screen + system-audio capture**: PipeWire (`WebRTCPipeWireCapturer`) on Wayland,
+  X11 via XWayland by default (`OMI_OZONE=wayland` override). See `rewind/`.
+- **Foreground/app-usage monitor**: `usage/foregroundMonitor.ts` shelling out to
+  `xprop` + `/proc` (X11). Wayland degrades gracefully (see `nativeForeground`).
+- **OCR**: Tesseract helper (`resources/linux-ocr-helper/omi-ocr-helper`), speaking the
+  win-ocr-helper stdio protocol so the rest of the code is platform-agnostic.
+- **Sign-language avatar**: bundled `pose-viewer` dependency (`SignAvatar`), no iframe/CDN.
+- **Automation bridge**: `automation/bridge.ts` for real Linux UI actions (opt-out via
+  `OMI_AUTOMATION=0`).
 
-**Symptoms:**
-- Avatar output area remained black/empty.
-- Logs showed `EGL_BAD_MATCH` and `Failed to record frame` errors related to Wayland/EGL.
-- `AvatarSandbox` (iframe/CDN based) failed to initialize or communicate the pose.
+## What is NOT included on Linux
 
-**Cause:**
-1. **Sandbox Overhead**: The `AvatarSandbox` used an iframe and CDN, which introduced race conditions and communication overhead.
-2. **CSP Restrictions**: The Content Security Policy (CSP) in `index.html` did not allow `data:` URIs for `media-src`, preventing Base64 encoded videos from playing.
-3. **Blob URL Issues**: In some Electron/Linux environments, converting Base64 to Blob URLs for videos caused playback failures.
+- The Windows-only OCR/automation helpers (`resources/win-ocr-helper`,
+  `resources/win-automation-helper`) are not bundled here.
+- `userAssistRegistry` (Windows UserAssist registry seeding) is a no-op off-Windows;
+  its `require('koffi')` is lazily loaded so the module stays importable on Linux.
 
-**Solution:**
-1. **Component Migration**: Replaced `AvatarSandbox` with `SignAvatar`. `SignAvatar` uses the bundled `pose-viewer` dependency, eliminating the iframe and network dependency.
-2. **CSP Update**: Added `data:` to the `media-src` directive in `src/renderer/index.html`.
-3. **Direct Data URI Playback**: Modified `SignVideo.tsx` to use `data:` URIs directly instead of converting them to Blob URLs.
-4. **Explicit Playback**: Added a `useEffect` to explicitly call `.play()` on the video element using a `ref` to bypass `autoPlay` restrictions.
+## Security model (reviewed before merge)
+
+- `webSecurity` is **enabled**. Omi API CORS is handled at the `session` layer
+  (`onBeforeSendHeaders` strips `Origin`; `onHeadersReceived` injects `ACAO`) — scoped to
+  `api.omi.me` and the desktop backend, not a global disable.
+- Permission grants (`microphone`, `media`, `display-capture`) are scoped to the app's
+  own trusted origins (`http://localhost`, `file://`) and denied for any other origin.
+- The Deepgram Voice Agent's `write_file` tool is confined to a sandbox directory
+  (`Documents/OmiAgent`, overridable via `OMI_AGENT_SANDBOX_DIR`); absolute paths
+  outside it are refused. `open_url` only allows `http(s)`/`mailto` schemes.
+
+## Build
+
+```bash
+pnpm install
+pnpm build            # electron-vite build
+pnpm run dist:linux   # AppImage (+ deb)
+```
+
+See `README.md` for full setup, dependencies (tesseract-ocr, libxss1, libnotify4),
+and Wayland/XWayland notes.

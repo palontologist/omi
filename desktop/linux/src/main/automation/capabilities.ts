@@ -14,7 +14,8 @@ const BLOCKLISTED_WINDOW_SUBSTRINGS = [
   'lock screen',
   'credential',
   'task manager',
-  'omi for windows'
+  'omi for windows',
+  'omi for linux'
 ]
 
 // Upper bound for wait_for. Kept BELOW the bridge's per-request timeout

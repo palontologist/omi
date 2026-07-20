@@ -3,11 +3,15 @@ import { join } from 'path'
 import { existsSync } from 'fs'
 
 /**
- * Resolve the on-disk path to the bundled win-automation-helper.exe.
- * Mirrors src/main/ocr/resolveHelperPath.ts (packaged-unpacked, extraResources,
- * dev). Returns the dev path last so the bridge surfaces a clear "not found".
+ * Resolve the on-disk path to the bundled Windows automation helper (.exe).
+ * This port targets Linux, where desktop automation uses the native
+ * xdotool/accessibility path instead — so on non-Windows this returns a
+ * sentinel that makes the bridge no-op rather than looking for a Windows exe.
  */
 export function resolveHelperPath(): string {
+  if (process.platform !== 'win32') {
+    return ''
+  }
   const exe = 'win-automation-helper.exe'
   const candidates = [
     join(process.resourcesPath, 'app.asar.unpacked', 'resources', 'win-automation-helper', exe),
@@ -19,3 +23,4 @@ export function resolveHelperPath(): string {
   }
   return candidates[candidates.length - 1]
 }
+

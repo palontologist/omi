@@ -94,10 +94,22 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       const filePath = args.filePath as string
       const content = args.content as string
       try {
-        const dir = path.dirname(filePath)
+        // Sandbox writes to an allow-listed base directory. The agent must not be
+        // able to write to arbitrary absolute paths (e.g. system files, other
+        // users' homes). We resolve and confirm the target stays under an
+        // approved root, rejecting anything that escapes it.
+        const safeRoot = process.env.OMI_AGENT_SANDBOX_DIR
+          ? path.resolve(process.env.OMI_AGENT_SANDBOX_DIR)
+          : path.join(app.getPath('documents'), 'OmiAgent')
+        const resolved = path.resolve(safeRoot, filePath)
+        // Prevent path traversal: the resolved target must stay inside safeRoot.
+        if (resolved !== safeRoot && !resolved.startsWith(safeRoot + path.sep)) {
+          return `Refused to write outside the allowed directory: ${filePath}`
+        }
+        const dir = path.dirname(resolved)
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-        fs.writeFileSync(filePath, content, 'utf8')
-        return `File written successfully to ${filePath}`
+        fs.writeFileSync(resolved, content, 'utf8')
+        return `File written successfully to ${resolved}`
       } catch (e) {
         return `Failed to write file: ${(e as Error).message}`
       }
@@ -105,8 +117,21 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
     case 'open_url': {
       const url = args.url as string
       try {
-        shell.openExternal(url)
-        return `Opened ${url} in the browser.`
+        // Only http(s)/mailto are allowed. Reject file://, custom schemes, and
+        // UNC paths — shell.openExternal on those enables protocol-handler abuse
+        // or local-file disclosure. (Renderer already enforces a scheme
+        // allow-list; this is defense-in-depth in the main process.)
+        let parsed: URL
+        try {
+          parsed = new URL(url)
+        } catch {
+          return `Refused to open unparseable URL: ${url}`
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:' && parsed.protocol !== 'mailto:') {
+          return `Refused to open disallowed URL scheme: ${parsed.protocol}`
+        }
+        shell.openExternal(parsed.toString())
+        return `Opened ${parsed.toString()} in the browser.`
       } catch (e) {
         return `Failed to open URL: ${(e as Error).message}`
       }
@@ -261,11 +286,11 @@ function startAgentSession(
       },
       {
         name: 'write_file',
-        description: 'Write text or code to a file on the local system. Use this to build games, scripts, or documents.',
+        description: 'Write text or code to a file inside the agent sandbox directory (Documents/OmiAgent, or OMI_AGENT_SANDBOX_DIR). Paths are confined to that directory; absolute paths outside it are refused. Use this to build games, scripts, or documents.',
         parameters: {
           type: 'object',
           properties: {
-            filePath: { type: 'string', description: 'The absolute path where the file should be saved' },
+            filePath: { type: 'string', description: 'Path relative to the agent sandbox directory where the file should be saved' },
             content: { type: 'string', description: 'The content to write to the file' }
           },
           required: ['filePath', 'content']
@@ -273,11 +298,11 @@ function startAgentSession(
       },
       {
         name: 'open_url',
-        description: 'Open a URL or a local file path in the default browser or application.',
+        description: 'Open an http(s) or mailto URL in the default browser. file:// and custom schemes are refused for safety.',
         parameters: {
           type: 'object',
           properties: {
-            url: { type: 'string', description: 'The URL or file path to open' }
+            url: { type: 'string', description: 'The http(s) or mailto URL to open' }
           },
           required: ['url']
         }

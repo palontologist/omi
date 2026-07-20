@@ -1,5 +1,5 @@
-appId: com.omiwindows.app
-productName: Omi for Windows
+appId: com.omi.linux.app
+productName: Omi for Linux
 directories:
   buildResources: resources
 files:
@@ -21,19 +21,9 @@ asarUnpack:
   - node_modules/koffi/**
 extraResources:
   - soul.md
-win:
-  executableName: omi-windows
-  target:
-    - target: nsis
-      arch: [x64]
-nsis:
-  oneClick: false
-  perMachine: false
-  allowToChangeInstallationDirectory: true
-  artifactName: ${productName}-Setup-${version}.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+# Linux-only port. Ships AppImage + deb (unconfined) — no Windows (nsis) or
+# snap targets. Windows-only automation/OCR helpers are not bundled here;
+# Linux uses xprop + the Tesseract-backed omi-ocr-helper instead.
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -47,8 +37,12 @@ dmg:
 linux:
   target:
     - AppImage
-  maintainer: electronjs.org
+    - deb
+  maintainer: omi
   category: Utility
+  desktop:
+    Name: Omi
+    Comment: Omi AI companion — Linux desktop
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: omi-linux-${version}.${ext}
 npmRebuild: false

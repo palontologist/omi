@@ -64,7 +64,7 @@ if (!process.env.OMI_PERF_LOG) {
 perfMark('app:start')
 
 // Opt-in sandbox isolation. By default Electron derives userData from the
-// product name ("omi-windows"), which is the real user's data + signed-in
+// product name ("omi-linux"), which is the real user's data + signed-in
 // Firebase session. Set OMI_SANDBOX to pin a throwaway userData dir instead,
 // so a sandbox build can't share (and clobber) the production omi.db /
 // local_kg schema. Must run before any DB open (db.ts resolves userData lazily
@@ -106,7 +106,7 @@ if (DEEPGRAM_KEY) {
 const sandbox = process.env.OMI_SANDBOX
 if (sandbox && process.env.OMI_BENCH !== '1') {
   const suffix = sandbox === '1' ? 'chat-kg' : sandbox.replace(/[^a-zA-Z0-9._-]/g, '-')
-  app.setPath('userData', join(app.getPath('appData'), `omi-windows-sandbox-${suffix}`))
+  app.setPath('userData', join(app.getPath('appData'), `omi-linux-sandbox-${suffix}`))
 }
 
 // Enable PipeWire support for Wayland screen/audio capture
@@ -143,7 +143,13 @@ function createWindow(): BrowserWindow {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
-      webSecurity: false, // Disabled to work around Omi API CORS preflight issues
+      // webSecurity stays ON. The Omi API CORS preflight is worked around at the
+      // session layer (onBeforeSendHeaders strips Origin; onHeadersReceived injects
+      // ACAO) below — that is origin-scoped and does NOT require disabling the
+      // renderer's same-origin policy. Keeping webSecurity enabled preserves
+      // normal origin-bound checks so a renderer compromise can't read arbitrary
+      // file:// or cross-origin data.
+      webSecurity: true,
       // Keep renderer timers running at full rate when the window is minimized/
       // hidden, so Rewind's background screen capture keeps sampling instead of
       // being throttled to ~once/minute by Chromium's background policy.
@@ -232,8 +238,8 @@ app.whenReady().then(async () => {
       )
     }
   }
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.omiwindows.app')
+  // Set app user model id (used on Windows; harmless on Linux)
+  electronApp.setAppUserModelId('com.omi.linux.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -298,20 +304,37 @@ app.whenReady().then(async () => {
   console.log('[main] setDisplayMediaRequestHandler registered (system-audio loopback ready)')
 
   // Grant microphone and media permissions automatically — required for NixOS/Wayland
-  // where the default Chromium permission prompt may not appear.
-  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-    const allowedPermissions = ['media', 'microphone', 'mediaKeySystem', 'display-capture']
-    if (allowedPermissions.includes(permission)) {
-      console.log(`[main] permission granted: ${permission}`)
+  // where the default Chromium permission prompt may not appear. Scoped to the
+  // app's own trusted origins (loopback renderer server + file://) and only the
+  // capture/media permissions Omi actually needs. Any other origin or permission
+  // type is denied, so a compromised/redirected renderer cannot silently obtain
+  // camera/geolocation/etc.
+  const TRUSTED_ORIGINS = ['http://localhost', 'file://', 'about:blank']
+  const ALLOWED_PERMISSIONS = new Set([
+    'media',
+    'microphone',
+    'mediaKeySystem',
+    'display-capture'
+  ])
+  const isTrustedOrigin = (origin?: string): boolean =>
+    !!origin && TRUSTED_ORIGINS.some((o) => origin.startsWith(o))
+
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const origin = webContents?.getURL()
+    if (ALLOWED_PERMISSIONS.has(permission) && isTrustedOrigin(origin)) {
+      console.log(`[main] permission granted: ${permission} (origin=${origin})`)
       callback(true)
     } else {
-      console.log(`[main] permission denied: ${permission}`)
+      console.log(`[main] permission denied: ${permission} (origin=${origin})`)
       callback(false)
     }
   })
 
-  // Synchronous permission check handler (called before permission request)
-  session.defaultSession.setPermissionCheckHandler(() => true)
+  // Synchronous permission check handler (called before permission request).
+  // Same trust + permission scoping as the request handler — never a blanket allow.
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) =>
+    ALLOWED_PERMISSIONS.has(permission) && isTrustedOrigin(requestingOrigin)
+  )
   
   // Register custom protocol to serve pose/video assets from temp dir
   protocol.handle('omi-asset', async (request) => {

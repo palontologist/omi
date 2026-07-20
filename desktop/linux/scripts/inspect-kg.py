@@ -1,6 +1,10 @@
 import sqlite3, os, sys
 
-DB = os.path.join(os.environ["APPDATA"], "omi-windows", "omi.db")
+DB = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+    "omi-linux",
+    "omi.db",
+)
 d = sqlite3.connect(DB)
 c = d.cursor()
 

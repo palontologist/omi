@@ -68,7 +68,7 @@
 ### Quick Start
 ```bash
 # Run the app
-appimage-run dist/omi-windows-1.0.0.AppImage
+appimage-run dist/omi-linux-1.0.0.AppImage
 ```
 
 ### Prerequisites

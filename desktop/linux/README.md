@@ -41,12 +41,12 @@ pnpm run dev
 pnpm run build:linux
 ```
 
-Output: `dist/omi-windows-1.0.0.AppImage`
+Output: `dist/omi-linux-1.0.0.AppImage`
 
 ### Run on NixOS
 
 ```bash
-appimage-run dist/omi-windows-1.0.0.AppImage
+appimage-run dist/omi-linux-1.0.0.AppImage
 ```
 
 No FUSE needed. AppImage is extracted to `~/.cache/appimage-run/` automatically.

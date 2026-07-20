@@ -1,7 +1,11 @@
 import sqlite3, os
 from datetime import datetime, timezone
 
-DB = os.path.join(os.environ["APPDATA"], "omi-windows", "omi.db")
+DB = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+    "omi-linux",
+    "omi.db",
+)
 c = sqlite3.connect(DB).cursor()
 now = datetime.now(timezone.utc).timestamp() * 1000
 DAY = 86_400_000
