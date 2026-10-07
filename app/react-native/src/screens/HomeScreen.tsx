@@ -7,7 +7,16 @@ import { useMemoriesStore } from '@/state/memoriesStore';
 import { useConversationsStore } from '@/state/conversationsStore';
 import { useAuthStore } from '@/state/authStore';
 import { createActionItem } from '@/api/omiApi';
-import { runAgent } from '@/services/localAgent';
+import {
+  routeWithProvider,
+  ROUTE_PROTOTYPES,
+  OUT_OF_DOMAIN_PROTOTYPES,
+  type Route,
+} from '@/services/localBrainRouter';
+import { createNativeRouter, isLocalBrainAvailable } from '../../modules/local-brain';
+import { answerLocally } from '@/services/localAssistant';
+import { LocalBrainBar, type RouteTrace } from '@/components/LocalBrainBar';
+import { DEV_LOCAL_BRAIN, GUEST_MODE } from '@/devFlags';
 import type { Conversation, Memory } from '@/api/omiApi';
 
 function dayLabel(iso?: string): string {
@@ -52,18 +61,52 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('')
   const uid = useAuthStore((s) => s.uid)
 
+  // Routing is the embedder when the native module is present, and the existing
+  // regexes otherwise. Built once and reused: configure() crosses the bridge on
+  // the first call and caches the promise on the provider.
+  const brainRouter = useMemo(
+    () =>
+      isLocalBrainAvailable
+        ? createNativeRouter(ROUTE_PROTOTYPES, OUT_OF_DOMAIN_PROTOTYPES)
+        : null,
+    []
+  );
+
+  const [trace, setTrace] = useState<RouteTrace | null>(null);
+  const [answer, setAnswer] = useState<{ text: string; kind: string } | null>(null);
+  const [answering, setAnswering] = useState(false);
+
   // On-device local agent: a task/reminder command is handled without the cloud;
   // anything else falls through to "Ask Omi" chat.
   const submit = async (): Promise<void> => {
     const text = query.trim()
     if (!text) return
-    const action = await runAgent(text)
+    const outcome = await routeWithProvider(text, brainRouter)
+    setTrace({
+      source: outcome.source,
+      route:
+        outcome.decision.kind === 'chat'
+          ? 'chat'
+          : (outcome.decision.kind as Route),
+      margin: 'margin' in outcome ? outcome.margin : 0,
+      reason: outcome.source === 'heuristic' ? outcome.reason : undefined,
+    })
+    const action = outcome.decision
     if (action.kind === 'chat') {
-      // Chat streaming isn't wired on this surface yet; don't pretend to answer.
-      Alert.alert('Ask Omi', 'Chat isn’t wired on this screen yet — task/reminder commands work: try "add a task: …".')
+      // Answered from on-device storage, not generated. See localAssistant: the
+      // brain is an embedder, so every answer is either something recorded or an
+      // explicit refusal. Shown in the transcript rather than an Alert, because
+      // an answer belongs in the conversation, not a dialog the user dismisses.
+      setAnswering(true)
+      try {
+        const reply = await answerLocally(text)
+        setAnswer({ text: reply.text, kind: reply.kind })
+      } finally {
+        setAnswering(false)
+      }
       return
     }
-    if (!uid) {
+    if (!uid && !GUEST_MODE) {
       Alert.alert('Sign in required', 'Sign in so tasks sync to your account.')
       return
     }
@@ -97,7 +140,7 @@ export default function HomeScreen() {
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.connectBtn}
-          onPress={() => router.push('/(tabs)/settings')}
+          onPress={() => router.push('/omi-device')}
           activeOpacity={0.8}
         >
           <Text style={styles.connectText}>Connect</Text>
@@ -148,6 +191,43 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {answer && (
+        <View style={styles.answerCard}>
+          <Text style={styles.answerKind}>
+            {answering
+              ? 'thinking…'
+              : answer.kind === 'quote'
+                ? 'from your recordings'
+                : answer.kind === 'summary'
+                  ? 'closest match'
+                  : answer.kind === 'unsupported'
+                    ? 'needs the server'
+                    : 'no match'}
+          </Text>
+          <Text style={styles.answerText}>{answer.text}</Text>
+        </View>
+      )}
+
+      {/* Routing transparency: which layer decided, and how confident it was. */}
+      <LocalBrainBar trace={trace} />
+
+      {DEV_LOCAL_BRAIN && (
+        <View style={styles.devRow}>
+          <TouchableOpacity
+            style={styles.devBtn}
+            onPress={() => router.push('/dev-local-brain')}
+          >
+            <Text style={styles.devBtnText}>Local brain</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.devBtn}
+            onPress={() => router.push('/dev-omi-device')}
+          >
+            <Text style={styles.devBtnText}>omi device</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.inputBar}>
         <View style={styles.inputBox}>
@@ -210,6 +290,29 @@ const styles = StyleSheet.create({
   },
   mindTag: { color: '#FFF', fontSize: 13, fontWeight: '600' },
   mindCount: { color: '#8E8E93', fontSize: 11 },
+  answerCard: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#111827',
+  },
+  answerKind: { fontSize: 11, color: '#6b7280', marginBottom: 6 },
+  answerText: { fontSize: 14, color: '#f9fafb', lineHeight: 20 },
+  devRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  devBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#1f2937',
+    alignItems: 'center',
+  },
+  devBtnText: { color: '#9ca3af', fontSize: 13, fontWeight: '600' },
   inputBar: {
     paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#0B0B0F',
     borderTopWidth: 1, borderTopColor: '#1C1C1E',
