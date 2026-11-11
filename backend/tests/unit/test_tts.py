@@ -1,15 +1,14 @@
 """Unit tests for the TTS proxy (/v2/tts/synthesize).
 
 Covers input validation (voice_id, text length, empty text) by importing the
-pure helpers directly — mirrors the test pattern used by the sibling Rust
-implementation in desktop/macos/Backend-Rust/src/routes/tts.rs.
+pure helpers directly.
 
-End-to-end wiring (Redis rate-limit + ElevenLabs upstream) is exercised via
-integration tests — the unit layer here is intentionally scoped to the bits
-that are easy to regress by accident when someone edits the router.
+Network behavior is mocked here; shared request construction and real FFmpeg
+transcoding are covered by ``test_tts_synthesis.py``.
 """
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from models.tts import (
@@ -18,7 +17,9 @@ from models.tts import (
     DEFAULT_VOICE_ID,
     TtsSynthesizeRequest,
 )
+from database import voice_preferences
 from routers import tts as tts_router
+from utils.tts import TtsUpstreamError
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +87,36 @@ def test_default_output_format():
     assert DEFAULT_OUTPUT_FORMAT == "mp3_44100_128"
 
 
+# ---------------------------------------------------------------------------
+# output_format plumbing
+#
+# The bug this guards: output_format used to be sent in the POST body only,
+# where ElevenLabs ignores it, so every client silently received MP3. The RN
+# DevKit 2 speaker path asks for ulaw_8000 (8 kHz mu-law) and MP3 bytes
+# mu-law-decoded are a loud buzz, not speech.
+# ---------------------------------------------------------------------------
+def test_device_format_is_supported():
+    assert "ulaw_8000" in tts_router._EL_OUTPUT_FORMATS
+    assert DEFAULT_OUTPUT_FORMAT in tts_router._EL_OUTPUT_FORMATS
+
+
+def test_output_format_rejected_when_unsupported():
+    # Anything not on the allowlist must fail before touching the URL.
+    for bad in ("", "mp3", "vorbis_48000", "../../history", "pcm_16000; x=1"):
+        assert bad not in tts_router._EL_OUTPUT_FORMATS
+
+
+def test_el_url_puts_format_in_query_not_body():
+    url = tts_router._el_tts_url("VOICEID123", "ulaw_8000")
+    assert url == "https://api.elevenlabs.io/v1/text-to-speech/VOICEID123?output_format=ulaw_8000"
+
+
+def test_media_type_matches_format_family():
+    assert tts_router._el_output_media_type("mp3_44100_128") == "audio/mpeg"
+    assert tts_router._el_output_media_type("pcm_16000") == "audio/L16"
+    assert tts_router._el_output_media_type("ulaw_8000") == "audio/basic"
+
+
 def test_request_model_applies_defaults():
     req = TtsSynthesizeRequest(text="hello")
     assert req.text == "hello"
@@ -98,3 +129,58 @@ def test_request_model_applies_defaults():
 def test_request_model_rejects_empty_text():
     with pytest.raises(ValidationError):
         TtsSynthesizeRequest(text="")
+
+
+async def _audio_chunks():
+    yield b'mp3'
+
+
+async def _allow_rate_limit(_executor, function, *_args, **_kwargs):
+    if function is voice_preferences.get_assistant_voice:
+        return 'Charon'
+    return 0, None
+
+
+@pytest.mark.asyncio
+async def test_route_uses_shared_gemini_stream_and_preserves_audio_mpeg(monkeypatch):
+    calls = []
+
+    async def open_stream(**kwargs):
+        calls.append(kwargs)
+        return _audio_chunks()
+
+    monkeypatch.setattr(tts_router, 'run_blocking', _allow_rate_limit)
+    monkeypatch.setattr(tts_router, 'get_tts_provider', lambda: 'gemini')
+    monkeypatch.setattr(tts_router, 'open_gemini_mp3_stream', open_stream)
+
+    response = await tts_router.tts_synthesize(TtsSynthesizeRequest(text='hello', voice_id='UnknownVoice1'), uid='u')
+    body = b''.join([chunk async for chunk in response.body_iterator])
+
+    assert response.media_type == 'audio/mpeg'
+    assert body == b'mp3'
+    assert calls == [{'text': 'hello', 'voice_id': 'UnknownVoice1', 'client': 'mobile'}]
+
+
+@pytest.mark.asyncio
+async def test_route_preserves_gemini_upstream_status_for_client_fallback(monkeypatch):
+    async def fail_stream(**_kwargs):
+        raise TtsUpstreamError(429)
+
+    monkeypatch.setattr(tts_router, 'run_blocking', _allow_rate_limit)
+    monkeypatch.setattr(tts_router, 'get_tts_provider', lambda: 'gemini')
+    monkeypatch.setattr(tts_router, 'open_gemini_mp3_stream', fail_stream)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await tts_router.tts_synthesize(TtsSynthesizeRequest(text='hello'), uid='u')
+    assert exc_info.value.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_route_legacy_rollback_requires_elevenlabs_key(monkeypatch):
+    monkeypatch.setattr(tts_router, 'run_blocking', _allow_rate_limit)
+    monkeypatch.setenv('TTS_PROVIDER', 'legacy')
+    monkeypatch.delenv('ELEVENLABS_API_KEY', raising=False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await tts_router.tts_synthesize(TtsSynthesizeRequest(text='hello'), uid='u')
+    assert exc_info.value.status_code == 503
